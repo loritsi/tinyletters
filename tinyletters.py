@@ -1,5 +1,4 @@
 import keyboard
-import sys
 import os
 import time
 import pygetwindow as gw
@@ -19,10 +18,6 @@ def cursorblink():
     else:
         return False
 
-LETTERBANK = {
-    "abcdefhijklmn",
-    "opqrstuvwxyz."
-}
 
 class Cursor:
     INPUTMAP = {

@@ -1,11 +1,4 @@
-import sys
 
-BANKS = [
-    "abcdefghijklmn",
-    "opqrstuvwxyz.,",
-    '!?-/()&"\'\n'
-]
-ALLCHARS = ''.join(BANKS)
 CODES = [
     "onecap",
     "lower",
@@ -13,7 +6,7 @@ CODES = [
     "digit"
 ]
 
-def tinyify(text):
+def tinyify(text, BANKS, ALLCHARS, CODES=CODES, debug=False):
     def getnextlastcap(text, index):
         for i in range(index, len(text)):
             if text[i].islower():
@@ -22,7 +15,7 @@ def tinyify(text):
     def getvaluesforchar(char, currentbank):
         if char.isdigit():
             return [format(int(char), "04b")], currentbank  # if the character is a digit, return the 4 bit binary representation of the digit and the current bank
-        char = char.lower()                             # make the character lowercase (we've already checked for caps at this point)
+        char = char.lower()                                 # make the character lowercase (we've already checked for caps at this point)
         foundbank = None
         for i, bank in enumerate(BANKS):
             if char in bank:
@@ -35,43 +28,29 @@ def tinyify(text):
         charindex = BANKS[foundbank].index(char)        # get the index number of the char within the bank
         charindex = format(charindex, "04b")            # convert index number to 4 bit binary string
         output.append(charindex)                        # finally add char value to the output (if no switches are needed, this will be the only value)
-        return output, foundbank
+        return output, foundbank                        # return the output values and the bank the character was found in (so we can keep track of it)
     
     def converttobin(tiniedtext, beforelength):
-        filelength = len(tiniedtext)
+        filelength = len(tiniedtext)                                            # get the length of the converted nibble list
         if filelength % 2 != 0:                                                 # if there is an odd number of nibbles we should make it even so we can convert to bytes
             tiniedtext.append("0000")                                           # add a 0 nibble to the end of the file
         header = format(filelength, "032b")                                     # create a 32 bit binary header with the length of the file
-        print(header)
-        header = [header[i:i+4] for i in range(0, len(header), 4)]         # split the 32 bit header into 8 nibbles (dynamic)
+        header = [header[i:i+4] for i in range(0, len(header), 4)]              # split the header into nibbles (dynamic)
         tiniedtext = header + tiniedtext                                        # add the header to the beginning of the file data
-        print(tiniedtext)
-        filebytes = []
-        for i in range(0, len(tiniedtext)-1, 2):                                # iterate through the file in pairs
-            byte = tiniedtext[i] + tiniedtext[i + 1]                            # combine two nibbles into a byte
-            byte = int(byte, 2)                                                 # convert the byte to an integer
-            if byte > 255:                                                      # if the byte is greater than 255, something went wrong
+        filebytes = []                                                              # create an empty list to store the bytes   
+        for i in range(0, len(tiniedtext)-1, 2):                                    # iterate through the file in pairs
+            byte = tiniedtext[i] + tiniedtext[i + 1]                                # combine two nibbles into a byte
+            byte = int(byte, 2)                                                     # convert the byte to an integer
+            if byte > 255:                                                          # if the byte is greater than 255, something went wrong
                 print("ERROR: byte too big for he got damn feet") 
-            filebytes.append(byte)                                              # add the byte to the list of bytes
-        print(f"File reduced by {(beforelength * 8) - (len(filebytes) * 8)} bits")
+            filebytes.append(byte)                                                  # add the byte to the list of bytes
+        print(f"File reduced by {(beforelength * 8) - (len(filebytes) * 8)} bits")  # brag about how much we reduced the file
         return filebytes
-        # filename = "test"#input("Enter the name you want to use for the output file: ")
-        # try:
-        #     with open(f"{filename}.tiny", "wb") as f:
-        #         f.write(bytes(filebytes))                                       # write the bytes to a file
-        #     print(f"File saved as {filename}.tiny")
-        #     print(f"File reduced by {(beforelength * 8) - (len(filebytes) * 8)} bits")
-        # except Exception as e:
-        #     print(f"An error occurred: {e}")
-        #     return
-        
-        
     
     beforelength = len(text)
-
     tiniedtext = []
-    currentbank = 0
-    charmode = "lower"
+    currentbank = 0             # start in the first bank
+    charmode = "lower"          # start in lowercase mode
 
     for i, char in enumerate(text):
         print(char)
@@ -83,8 +62,8 @@ def tinyify(text):
             if nextlastcap != -1:
                 if (nextlastcap - i) > 1:                               # if there is more than one capital letter in a row, switch to upper mode
                     charmode = "upper"
-                    modeindex = format(CODES.index(charmode), "04b")
-                    charvalues.extend(["1110", modeindex])
+                    modeindex = format(CODES.index(charmode), "04b")    # get the index of the mode
+                    charvalues.extend(["1110", modeindex])              # add the control code and mode index to the output
                 else:                                                   # if there is only one capital letter, switch to onecap mode
                     charmode = "onecap"
                     modeindex = format(CODES.index(charmode), "04b")
@@ -101,18 +80,16 @@ def tinyify(text):
             charmode = "lower"                                          # switching back to lowercase after digit mode
         newvalues, currentbank = getvaluesforchar(char, currentbank)                                  
         charvalues.extend(newvalues)
-        print(charvalues)
-        print(f"charmode: {charmode}")
         tiniedtext.extend(charvalues)
-    return converttobin(tiniedtext, beforelength)
+    bintext = converttobin(tiniedtext, beforelength)
+    afterlength = len(bintext)
+    return bintext, beforelength, afterlength
         
-if __name__ == "__main__":
-    import bigifier
-    sampletext = """Lore hidden in plain sight often carries the most weight.
-    Patterns emerge, connections are made,
-    yet the meaning eludes comprehension.
-
-    Words drift through time,
-    shaping the unseen framework of our understanding.
-    """
-    tinyify(sampletext)
+# if __name__ == "__main__":
+#     from components.bigifier import bigify
+#     sampletext = ""
+#     tinyified, beforelength, afterlength = tinyify(sampletext)
+#     bigified = bigify(tinyified)
+#     print(tinyified)
+#     print(bigified)
+#     print(f"Before: {beforelength} After: {afterlength}")
