@@ -11,10 +11,10 @@ CODES = [
     "digit"
 ]
 
-from components import bigify
-from components import tinyify
+from components.tinyifier import tinyify
+from components.bigifier import bigify
+from components.janitor import cleanup
 import pygame
-import sys
 
 pygame.init()
 
@@ -33,7 +33,7 @@ cursorvisible = True
 pygame.key.set_repeat(300, 50)
 
 
-bodytext = ["test", "test2", "test3"]
+bodytext = []
 bodytextsurf = None
 cursorvisible = True
 
@@ -49,29 +49,40 @@ while running:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
             running = False
-            sys.exit()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:            # on enter
                 bodytext.append("")                     # add a new line to the body text list
             elif event.key == pygame.K_BACKSPACE:                                   # on backspace
+                # vvvv this sucks and i need to reverse the logic
                 if bodytext[len(bodytext)-1] != "":                                 # if the line has stuff in it
                     bodytext[len(bodytext)-1] = bodytext[len(bodytext)-1][:-1]      # remove the last character
                 else:                                                               # if the line is empty
-                    bodytext.pop()                                                  # just remove the line from the list entirely
+                    try:
+                        bodytext.pop()                                              # just remove the line from the list entirely
+                    except IndexError:                                              # if the list is empty we don't care because there's nothing to remove anyway
+                        pass
             else:                                                                   # if any other key is pressed
+                if bodytext == []:                                                  # if there are no lines in the body text
+                    bodytext.append("")                                             # add a new line
                 bodytext[len(bodytext)-1] += event.unicode                          # add the keyboard input to the last line (may result in destructive results)
 
     window.fill(black)
 
     lineheight = 50
-    for line in bodytext:
-        bodytextsurf = font.render(line, True, white)
+    if bodytext == [] or bodytext == [""]:
+        bodytextsurf = font.render("input...", True, grey)
+        window.blit(bodytextsurf, (100, lineheight))
+    for i, line in enumerate(bodytext):
+        if i == len(bodytext) - 1:
+            islastline = True
+        else: 
+            islastline = False
+        bodytextsurf = font.render(line + ("<" if cursorvisible and islastline else ""), True, white)
         window.blit(bodytextsurf, (100, lineheight))
         lineheight += fontsize + linepadding
 
 
     pygame.display.flip()
-    
+cleanup(bodytext)
         
