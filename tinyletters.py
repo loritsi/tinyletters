@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import pygetwindow as gw
+
 TITLE = "TinyLETTERS"
 os.system(f"title {TITLE}")
 def is_terminal_focused():
