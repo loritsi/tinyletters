@@ -13,28 +13,12 @@ CODES = [
 
 #from components.fourbitencoding import tinyify, bigify
 from components.janitor import cleanup
+from components.button import Button
+import shared
 import pygame
 
-
-dimensions = {
-    "WIDTH": 800,
-    "HEIGHT": 600,
-    "LEFTMARGIN": 100,
-    "RIGHTMARGIN": 100,
-    "MARGINWIDTHSPACE": 600,
-    "UPPERMARGIN": 100,
-    "LOWERMARGIN": 100,
-    "LINEPADDING": 4,
-    "BORDER": 10,
-    "FONTSIZE": 25
-}
-
-colours = {
-    "white": (255, 255, 255),
-    "grey": (128, 128, 128),
-    "dark_grey": (64, 64, 64),
-    "black": (0, 0, 0)
-}
+colours = shared.colours
+dimensions = shared.dimensions
 
 def wraplines(lines, font, dimensions=dimensions):
     wrappedlines = []
@@ -112,9 +96,7 @@ def renderbodytext(bodytext, scrollpos, window, pagecolour=colours["dark_grey"],
     MARGINWIDTHSPACE = dimensions["MARGINWIDTHSPACE"]
     LEFTMARGIN = dimensions["LEFTMARGIN"]
     UPPERMARGIN = dimensions["UPPERMARGIN"]
-
-
-                
+     
     def renderline(line, y, colour):
         linesurf = font.render(line, True, colour)          # put the line into a surface
         window.blit(linesurf, (LEFTMARGIN, y))              # blit the surface to the window at the desired height
@@ -123,23 +105,7 @@ def renderbodytext(bodytext, scrollpos, window, pagecolour=colours["dark_grey"],
     
     for i, line in enumerate(bodytext):
         renderline(line, lineheight, textcolour)
-        lineheight += fontsize + linepadding
-                
-
-    # lineheight = 50 + scrollpos
-    # if bodytext == [] or bodytext == [""]:
-    #     bodytextsurf = font.render("input...", True, grey)
-    #     window.blit(bodytextsurf, (100, lineheight))
-    # for i, line in enumerate(bodytext):
-    #     if i == len(bodytext) - 1:
-    #         islastline = True
-    #     else: 
-    #         islastline = False
-    #     bodytextsurf = font.render(line + ("<" if cursorvisible and islastline else ""), True, white)
-    #     window.blit(bodytextsurf, (100, lineheight))
-    #     lineheight += fontsize + linepadding
-
-
+        lineheight += fontsize + linepadding      
 
 
 pygame.init()
@@ -153,6 +119,11 @@ pygame.display.set_caption("TinyLETTERS")
 fontname = pygame.font.match_font("consolas")
 fontsize = 25
 font = pygame.font.Font(fontname, fontsize)
+
+buttonfontname = pygame.font.match_font("consolas")
+buttonfontsize = 15
+buttonfont = pygame.font.Font(buttonfontname, buttonfontsize)
+
 linepadding = 4
 cursortimer = 0
 pygame.key.set_repeat(300, 50)
@@ -165,6 +136,7 @@ scrollpos = 0
 
 running = True
 clock = pygame.time.Clock()
+clicking = False
 while running:
     clock.tick(60)                                  # limit the frame rate to 60 FPS
 
@@ -188,12 +160,24 @@ while running:
                 scrollpos += 10
             elif event.button == 5:                     # scroll down
                 scrollpos -= 10
+            if event.button == 1:
+                clicking = True
+            else:
+                clicking = False
+    mousepos = pygame.mouse.get_pos()
+
+    savebutton = Button("save", window, buttonfont, function=cleanup, args=bodytext)
+
 
     window.fill(colours["black"])
     if scrollpos > 0:
         scrollpos = 0
     bodytext = wraplines(bodytext, font)
     renderbodytext(bodytext, scrollpos, window, linepadding=linepadding)
+
+    for button in Button.buttons:
+        button.render()
+        button.tick(mousepos, clicking)
 
     pygame.display.flip()
 cleanup(bodytext)           # perform closing operations (save, cleanup, etc.)
