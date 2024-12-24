@@ -1,3 +1,2 @@
-from .bigifier import bigify
-from .tinyifier import tinyify
+from .fourbitencoding import tinyify, bigify
 from .janitor import cleanup

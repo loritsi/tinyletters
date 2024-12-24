@@ -11,8 +11,7 @@ CODES = [
     "digit"
 ]
 
-from components.tinyifier import tinyify
-from components.bigifier import bigify
+from components.fourbitencoding import tinyify, bigify
 from components.janitor import cleanup
 import pygame
 
