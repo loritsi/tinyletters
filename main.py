@@ -11,27 +11,68 @@ CODES = [
     "digit"
 ]
 
-from components.fourbitencoding import tinyify, bigify
+#from components.fourbitencoding import tinyify, bigify
 from components.janitor import cleanup
 import pygame
 
-WIDTH = 800
-HEIGHT = 600
 
-LEFTMARGIN = 100
-RIGHTMARGIN = 100
+dimensions = {
+    "WIDTH": 800,
+    "HEIGHT": 600,
+    "LEFTMARGIN": 100,
+    "RIGHTMARGIN": 100,
+    "MARGINWIDTHSPACE": 600,
+    "UPPERMARGIN": 100,
+    "LOWERMARGIN": 100,
+    "LINEPADDING": 4,
+    "BORDER": 10,
+    "FONTSIZE": 25
+}
 
-MARGINWIDTHSPACE = WIDTH - LEFTMARGIN - RIGHTMARGIN
+colours = {
+    "white": (255, 255, 255),
+    "grey": (128, 128, 128),
+    "dark_grey": (64, 64, 64),
+    "black": (0, 0, 0)
+}
 
-UPPERMARGIN = 50
-LOWERMARGIN = 50
+def wraplines(lines, font, dimensions=dimensions):
+    wrappedlines = []
+    for line in lines:
+        words = line.split(" ")
+        thisline = []
+        for i, word in enumerate(words):
 
-# colours
-white = (255, 255, 255)
-grey = (128, 128, 128)
-black = (0, 0, 0)
+            if font.size(word)[0] > dimensions["MARGINWIDTHSPACE"]:       # if the line has a single word that is too long to fit in the margins
+                print("word too long")
+                segments = []                               # create a list to store the segments of the word 
+                thissegment = []                            # create a list to store the characters of the current segment
+                for char in word:                                                   # iterate through the characters in the word                                
+                    thissegment.append(char)                                        # add the character to the current segment
+                    if font.size("".join(thissegment))[0] > dimensions[ "MARGINWIDTHSPACE"]:       # check if its now too long to fit in the margins
+                        thissegment.pop()                                           # remove the last character if it is
+                        segments.append(''.join(thissegment))                       # add this segment to the list of segments
+                        thissegment = [char]                                # start a new segment with the current character
+                segments.append(''.join(thissegment))                       # add the last segment to the list of segments
+                print(segments)
+                words[i:i+1] = segments                                     # replace the word with the list of segments
+                print(words)
+                continue
+
+        for i, word in enumerate(words):
+
+            thisline.append(word)
+            if font.size(" ".join(thisline))[0] > dimensions[ "MARGINWIDTHSPACE"]:  # if the line is too long to fit in the margins
+                thisline.pop()                                       # remove the last word
+                if thisline:
+                    wrappedlines.append(" ".join(thisline))
+                thisline = [word]
+        wrappedlines.append(" ".join(thisline))
+    return wrappedlines
 
 def handleinput(event):
+    
+
     keypressed = False
 
     def backspace():
@@ -62,44 +103,24 @@ def handleinput(event):
         else:                                               # if any other key is pressed
             keyboardinput()
     return keypressed
-            
 
-def renderbodytext(bodytext, scrollpos, window, textcolour=white, linepadding=4):
-    lineheight = UPPERMARGIN + scrollpos
 
-    def wraplines(lines, font):
-        wrappedlines = []
-        for line in lines:
-            words = line.split(" ")
-            thisline = []
-            for i, word in enumerate(words):
-                print(word)
 
-                if font.size(word)[0] > MARGINWIDTHSPACE:       # if the line has a single word that is too long to fit in the margins
-                    segments = []                               # create a list to store the segments of the word 
-                    thissegment = []                            # create a list to store the characters of the current segment
-                    for char in word:                                                   # iterate through the characters in the word                                
-                        thissegment.append(char)                                        # add the character to the current segment
-                        if font.size("".join(thissegment))[0] > MARGINWIDTHSPACE:       # check if its now too long to fit in the margins
-                            thissegment.pop()                                           # remove the last character if it is
-                            segments.append(''.join(thissegment))                       # add this segment to the list of segments
-                            thissegment = [char]                                # start a new segment with the current character
-                    segments.append(''.join(thissegment))                       # add the last segment to the list of segments
-                    words[i:i+1] = segments                                     # replace the word with the list of segments
 
-                if font.size(" ".join(thisline))[0] > MARGINWIDTHSPACE:
-                    thisline.pop()
-                    if thisline:
-                        wrappedlines.append(" ".join(thisline))
-                    thisline = [word]
-            wrappedlines.append(" ".join(thisline))
-        return wrappedlines
+def renderbodytext(bodytext, scrollpos, window, pagecolour=colours["dark_grey"], textcolour=colours["white"], linepadding=4):
+    lineheight = dimensions["UPPERMARGIN"] + scrollpos
+    MARGINWIDTHSPACE = dimensions["MARGINWIDTHSPACE"]
+    LEFTMARGIN = dimensions["LEFTMARGIN"]
+    UPPERMARGIN = dimensions["UPPERMARGIN"]
+
+
                 
     def renderline(line, y, colour):
         linesurf = font.render(line, True, colour)          # put the line into a surface
         window.blit(linesurf, (LEFTMARGIN, y))              # blit the surface to the window at the desired height
 
-    bodytext = wraplines(bodytext, font)
+    pygame.draw.rect(window, pagecolour, (LEFTMARGIN-10, UPPERMARGIN-10 + scrollpos, MARGINWIDTHSPACE+20, 5000))
+    
     for i, line in enumerate(bodytext):
         renderline(line, lineheight, textcolour)
         lineheight += fontsize + linepadding
@@ -125,7 +146,7 @@ pygame.init()
 
 
 
-window = pygame.display.set_mode((WIDTH, HEIGHT))
+window = pygame.display.set_mode((dimensions["WIDTH"], dimensions["HEIGHT"]))
 pygame.display.set_caption("TinyLETTERS")
 
 
@@ -168,8 +189,10 @@ while running:
             elif event.button == 5:                     # scroll down
                 scrollpos -= 10
 
-    window.fill(black)
-
+    window.fill(colours["black"])
+    if scrollpos > 0:
+        scrollpos = 0
+    bodytext = wraplines(bodytext, font)
     renderbodytext(bodytext, scrollpos, window, linepadding=linepadding)
 
     pygame.display.flip()

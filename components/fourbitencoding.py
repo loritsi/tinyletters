@@ -86,6 +86,10 @@ def tinyify(text, BANKS, ALLCHARS, CODES=CODES, debug=False):
     afterlength = len(bintext)
     return bintext, beforelength, afterlength
 
+
+
+
+
 def bigify(tinybytes, BANKS, CODES=CODES):
     nibbles = []
     header = tinybytes[:4]                                      # get the header (the first 4 bytes)
