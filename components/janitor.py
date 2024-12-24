@@ -5,7 +5,8 @@ def cleanup(bodytext):
     print("text on screen at close time:")
 
     for i, line in enumerate(bodytext):
-        bodytext[i] = line + "\n" if not line.endswith("\n") else line
+        if not i == len(bodytext) - 1:
+            bodytext[i] = line + "\n" if not line.endswith("\n") else line
     bodytext = ''.join(bodytext)
     print(bodytext)
 
