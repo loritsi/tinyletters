@@ -11,11 +11,13 @@ CODES = [
     "digit"
 ]
 
-#from components.fourbitencoding import tinyify, bigify
+from components.fourbitencoding import tinyify, bigify
 from components.janitor import cleanup
 from components.button import Button
 import shared
 import pygame
+import tkinter as tk
+from tkinter import filedialog
 
 colours = shared.colours
 dimensions = shared.dimensions
@@ -52,6 +54,7 @@ def wraplines(lines, font, dimensions=dimensions):
                     wrappedlines.append(" ".join(thisline))
                 thisline = [word]
         wrappedlines.append(" ".join(thisline))
+    assert type(wrappedlines) == list, f"wrappedlines is not a list, it is a {type(wrappedlines)}"
     return wrappedlines
 
 def handleinput(event):
@@ -105,7 +108,38 @@ def renderbodytext(bodytext, scrollpos, window, pagecolour=colours["dark_grey"],
     
     for i, line in enumerate(bodytext):
         renderline(line, lineheight, textcolour)
-        lineheight += fontsize + linepadding      
+        lineheight += fontsize + linepadding  
+
+def load(args=None):   # cannot be put into a separate file because it uses the global bodytext
+    global bodytext
+    root = tk.Tk()
+    root.withdraw()
+    file_path = tk.filedialog.askopenfilename(
+        filetypes=[("TinyLETTERS files", "*.tiny")]
+    )
+    with open(file_path, "rb") as file:
+        bodyraw = file.read()
+    bodyraw = bigify(bodyraw, BANKS, CODES)
+    bodytext = bodyraw.split("\n")
+    root.destroy()
+
+def save(args=None):
+    root = tk.Tk()
+    root.withdraw()
+    file_path = tk.filedialog.asksaveasfilename(
+        filetypes=[("TinyLETTERS files", "*.tiny")]
+    )
+    if not file_path:
+        return
+    else:
+        if not file_path.endswith(".tiny"):
+            file_path += ".tiny"
+    bodyraw = '\n'.join(bodytext)
+    bodyraw = tinyify(bodyraw, BANKS, CODES)
+    print(bodyraw)
+    with open(file_path, "wb") as file:
+        file.write(bodyraw)
+    root.destroy()
 
 
 pygame.init()
@@ -136,9 +170,16 @@ scrollpos = 0
 
 running = True
 clock = pygame.time.Clock()
+mouse1 = False
 clicking = False
+
+savebutton = Button("save", window, buttonfont, function=save)
+loadbutton = Button("load", window, buttonfont, x=savebutton.buttonrect.right, function=load)
+
+
 while running:
     clock.tick(60)                                  # limit the frame rate to 60 FPS
+
 
     cursortimer += 1                                # increment the cursor timer once per frame
     if cursortimer > 30:                            # every 30 frames (0.5 seconds)
@@ -156,29 +197,39 @@ while running:
                 cursortimer = 0
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 4:                       # scroll up
-                scrollpos += 10
-            elif event.button == 5:                     # scroll down
-                scrollpos -= 10
-            if event.button == 1:
-                clicking = True
-            else:
+            if event.button == 4:                       # mouse wheel up
+                scrollpos += 10                         # scroll up
+            elif event.button == 5:                     # mouse wheel down
+                scrollpos -= 10                         # scroll down
+            if event.button == 1:                       # mouse 1 down
+                if not clicking:
+                    mouse1 = True                         # start the click
+                    clicking = True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:                       # mouse 1 up
+                mouse1 = False                        # end the click
                 clicking = False
+
     mousepos = pygame.mouse.get_pos()
 
-    savebutton = Button("save", window, buttonfont, function=cleanup, args=bodytext)
 
+    # DO NOT put button defs in here!!!
 
     window.fill(colours["black"])
+
     if scrollpos > 0:
         scrollpos = 0
     bodytext = wraplines(bodytext, font)
     renderbodytext(bodytext, scrollpos, window, linepadding=linepadding)
 
-    for button in Button.buttons:
+    for button in Button.buttons:                   
         button.render()
         button.tick(mousepos, clicking)
+    if mouse1 and clicking:
+        clicking = False
 
-    pygame.display.flip()
+
+    if running:
+        pygame.display.flip()  # only update the display if the program is still running (to prevent a crash on exit)
 cleanup(bodytext)           # perform closing operations (save, cleanup, etc.)
         

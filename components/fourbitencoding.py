@@ -6,7 +6,9 @@ CODES = [
     "digit"
 ]
 
-def tinyify(text, BANKS, ALLCHARS, CODES=CODES, debug=False):
+def tinyify(text, BANKS, CODES=CODES, debug=False):
+    ALLCHARS = ''.join(BANKS)
+    print(f"tinyifying {text}")
     def getnextlastcap(text, index):
         for i in range(index, len(text)):
             if text[i].islower():
@@ -47,7 +49,7 @@ def tinyify(text, BANKS, ALLCHARS, CODES=CODES, debug=False):
             filebytes.append(byte)  # add the byte to the list of bytes
         if debug:                                                                       
             print(f"File reduced by {(beforelength * 8) - (len(filebytes) * 8)} bits")  # brag about how much we reduced the file
-        return filebytes
+        return bytes(filebytes)                                                         # return the bytes object created from the list of bytes
     
     beforelength = len(text)
     tiniedtext = []
@@ -84,13 +86,15 @@ def tinyify(text, BANKS, ALLCHARS, CODES=CODES, debug=False):
         tiniedtext.extend(charvalues)
     bintext = converttobin(tiniedtext, beforelength, debug=debug)
     afterlength = len(bintext)
-    return bintext, beforelength, afterlength
+    return bintext
 
 
 
 
 
 def bigify(tinybytes, BANKS, CODES=CODES):
+    if type(tinybytes) == bytes:
+        tinybytes = list(tinybytes)
     nibbles = []
     header = tinybytes[:4]                                      # get the header (the first 4 bytes)
     for i, byte in enumerate(header):
