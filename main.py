@@ -163,8 +163,8 @@ cursortimer = 0
 pygame.key.set_repeat(300, 50)
 
 
-bodytext = ["test"]
-bodytextsurf = None
+bodytext = []
+bodytextsurf = None      # initialising the body text surface (text is added & rendered dynamically in the main loop)
 cursorvisible = True
 scrollpos = 0
 
@@ -220,7 +220,10 @@ while running:
     if scrollpos > 0:
         scrollpos = 0
     bodytext = wraplines(bodytext, font)
-    renderbodytext(bodytext, scrollpos, window, linepadding=linepadding)
+    if bodytext != [] and bodytext != [""]:
+        renderbodytext(bodytext, scrollpos, window, linepadding=linepadding)
+    else:
+        renderbodytext(["input..."], scrollpos, window, linepadding=linepadding, textcolour=colours["grey"])
 
     for button in Button.buttons:                   
         button.render()
@@ -230,6 +233,6 @@ while running:
 
 
     if running:
-        pygame.display.flip()  # only update the display if the program is still running (to prevent a crash on exit)
-cleanup(bodytext)           # perform closing operations (save, cleanup, etc.)
+        pygame.display.flip()   # only update the display if the program is still running otherwise it will crash
+cleanup(bodytext)               # perform closing operations (save, cleanup, etc.)
         
